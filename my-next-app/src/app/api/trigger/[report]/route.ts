@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+const AIRFLOW_API_BASE_URL = 'http://localhost:8080/api/v1';
+const AIRFLOW_AUTH = btoa('airflow:airflow');
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { report: string } }
@@ -7,35 +10,33 @@ export async function POST(
   try {
     const body = await request.json();
     
-    const response = await fetch(
-      `http://localhost:8080/api/v1/dags/${params.report}/dagRuns`,
+    const airflowResponse = await fetch(
+      `${AIRFLOW_API_BASE_URL}/dags/${params.report}/dagRuns`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Basic ' + Buffer.from('airflow:airflow').toString('base64')
+          'Authorization': `Basic ${AIRFLOW_AUTH}`,
         },
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
       }
     );
 
-    const data = await response.text();
-    return new NextResponse(data, {
-      status: response.status,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    const data = await airflowResponse.json();
+
+    if (!airflowResponse.ok) {
+      return NextResponse.json(
+        { error: 'Failed to trigger DAG', details: data },
+        { status: airflowResponse.status }
+      );
+    }
+
+    return NextResponse.json(data);
   } catch (error) {
-    console.error('Failed to trigger DAG:', error);
-    return new NextResponse(
-      JSON.stringify({ error: 'Failed to trigger DAG' }),
-      {
-        status: 500,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
+    console.error('Error triggering DAG:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
     );
   }
 } 

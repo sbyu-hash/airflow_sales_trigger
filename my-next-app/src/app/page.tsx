@@ -8,11 +8,20 @@ interface ReportParams {
   end_date: string;
 }
 
+const AIRFLOW_API_BASE_URL = 'http://localhost:8080/api/v1';
+const AIRFLOW_AUTH = btoa('airflow:airflow'); // base64 encode credentials
+
 export default function Home() {
   const [expandedItem, setExpandedItem] = useState<string | null>('DPOS_BRAND_SALES_REPORT');
   const [healthStatus, setHealthStatus] = useState<'healthy' | 'unhealthy' | null>(null);
   const [isChecking, setIsChecking] = useState(false);
-  const [reportParams, setReportParams] = useState<Record<string, ReportParams>>({});
+  const [reportParams, setReportParams] = useState<Record<string, ReportParams>>({
+    'DPOS_BRAND_SALES_REPORT': {
+      brand_name: '퀴즈노스-배민1제외',
+      start_date: '2024-03-01',
+      end_date: '2024-03-10'
+    }
+  });
 
   const handleParamChange = (report: string, field: keyof ReportParams, value: string) => {
     setReportParams(prev => ({
@@ -43,8 +52,12 @@ export default function Home() {
       });
 
       if (response.ok) {
+        const data = await response.json();
+        console.log('DAG triggered successfully:', data);
         alert('Report triggered successfully');
       } else {
+        const errorData = await response.json();
+        console.error('Failed to trigger report:', errorData);
         alert('Failed to trigger report');
       }
     } catch (error) {
@@ -158,7 +171,7 @@ export default function Home() {
                         </label>
                         <input
                           type="text"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-gray-900 font-medium"
                           value={reportParams[report]?.brand_name || ''}
                           onChange={(e) => handleParamChange(report, 'brand_name', e.target.value)}
                           placeholder="Enter brand name"
@@ -171,7 +184,7 @@ export default function Home() {
                           </label>
                           <input
                             type="date"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-gray-900 font-medium"
                             value={reportParams[report]?.start_date || ''}
                             onChange={(e) => handleParamChange(report, 'start_date', e.target.value)}
                           />
@@ -182,7 +195,7 @@ export default function Home() {
                           </label>
                           <input
                             type="date"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-gray-900 font-medium"
                             value={reportParams[report]?.end_date || ''}
                             onChange={(e) => handleParamChange(report, 'end_date', e.target.value)}
                           />
